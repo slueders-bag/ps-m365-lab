@@ -10,3 +10,5 @@ Get-AzureADUser -All $true | Measure-Object
 $all = Get-AzureADUser -All $true
 $all | Get-Member
 $all.city
+
+# sort / group department
