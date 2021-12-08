@@ -34,6 +34,10 @@ $all | ForEach-Object{
         $pre + "@" +(Get-AzureADDomain).Name
     }
 
-
-
-
+# Solution with foreach loop
+$domain = "contoso.com"
+foreach ($user in $allUsers) {
+	$displayName = $user.DisplayName.Split(" ").ToLower()
+	$upn = $user.UserPrincipalName.Split("@").ToLower()
+	Write-Host "SMTP:$($displayName[0]).$($displayName[1])@$($domain)"
+}
