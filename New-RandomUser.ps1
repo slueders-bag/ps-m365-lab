@@ -66,5 +66,6 @@ function New-RandomUser {
     Invoke-RestMethod -Uri $rootUrl
 }
 
-$usr = New-RandomUser -Amount 2 -Nationality ch,de -Format csv
-$us = New-RandomUser -Amount 2 -Nationality ch,de -Format json
+$usr = New-RandomUser -Amount 10 -Nationality ch,de -Format csv
+$us = New-RandomUser -Amount 10 -Nationality ch,de -Format json
+
