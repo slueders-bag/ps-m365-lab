@@ -165,7 +165,7 @@ $userObj | ForEach-Object{
 }
 
 # send report
-Send-ReportbyMail -credentials $cred -To slueders@baggenstos.ch -From admin@M365x682019.onmicrosoft.com -subject ("New User Report " + (get-date -format d)) -body ([System.Web.HttpUtility]::HtmlDecode($report))
+Send-ReportbyMail -credentials $cred -To hans.dampf@baggenstos.ch -From admin@M365x682019.onmicrosoft.com -subject ("New User Report " + (get-date -format d)) -body ([System.Web.HttpUtility]::HtmlDecode($report))
 
 # export HTML
 [System.Web.HttpUtility]::HtmlDecode($report) | Out-File C:\temp\htmlReport.htm
