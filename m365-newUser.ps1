@@ -35,6 +35,12 @@ $PasswordProfile.Password = "Password1+"
 [string]$report = @()
 $company = "SLU Corp"
 $report += "<h1>New User Report</h1>"
+$report += "<style>
+    td {width:100px; max-width:300px; background-color:lightgrey;}
+    table {width:100%;border-width: 0px; border-style: solid; border-color: black; border-collapse: collapse; margin-right: auto;}
+    th {font-size:12pt;background-color:yellow;text-align: left}
+    </style>"
+
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -154,8 +160,12 @@ $userObj | ForEach-Object{
     
     # set dates
     #Update-MgUser -UserId $newUser.objectid -Birthday $_.'dob.date' -HireDate $_.'registered.date' -EmployeeHireDate $_.'registered.date'
-    $picUrl = '<img src="'+$user.'picture.large'+'">'
-    $report += $newUser | Select-Object Displayname,UserPrincipalName,MailNickName,usagelocation,@{name="Pic";expression='<img src="https://randomuser.me/api/portraits/men/81.jpg">'} | ConvertTo-Html -Fragment -As Table | Out-String
+    $picUrl = '<img src="'+$_.'picture.thumbnail'+'">'
+    $report += $newUser | Select-Object Displayname,UserPrincipalName,MailNickName,usagelocation,@{name="Pic";expression={$picUrl}} | ConvertTo-Html -Fragment -As Table | Out-String
 }
 
-Send-ReportbyMail -credentials $cred -To hans.dampf@baggenstos.ch -From admin@M365x682019.onmicrosoft.com -subject ("New User Report " + (get-date -format d)) -body $report
+# send report
+Send-ReportbyMail -credentials $cred -To slueders@baggenstos.ch -From admin@M365x682019.onmicrosoft.com -subject ("New User Report " + (get-date -format d)) -body ([System.Web.HttpUtility]::HtmlDecode($report))
+
+# export HTML
+[System.Web.HttpUtility]::HtmlDecode($report) | Out-File C:\temp\htmlReport.htm

@@ -67,5 +67,5 @@ function New-RandomUser {
 }
 
 $usr = New-RandomUser -Amount 10 -Nationality ch,de -Format csv
-$us = New-RandomUser -Amount 10 -Nationality ch,de -Format json
-
+$user = New-RandomUser -Amount 10 -Nationality ch,de -Format json
+$user.results
