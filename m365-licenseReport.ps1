@@ -1,34 +1,57 @@
-$all = Get-AzureADUser -All $true | ?{$_.AssignedLicenses -ne $null}
-$sku = Get-AzureADSubscribedSku
-$csv = Import-Csv "C:\temp\Product names and service plan identifiers for licensing.csv"
-#https://download.microsoft.com/download/e/3/e/e3e9faf2-f28b-490a-9ada-c6089a1fc5b0/Product%20names%20and%20service%20plan%20identifiers%20for%20licensing.csv
+#---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
-$licenseDetails = @()
-$disPlanDetails = @()
-$report = @()
+if(Get-InstalledModule -Name "AzureAD"){Connect-AzureAd}
+else {Install-Module AzureAD -Scope CurrentUser -Confirm:$false}
+
+if(Get-InstalledModule -Name "ImportExcel"){Import-Module ImportExcel}
+else {Install-Module ImportExcel -Scope CurrentUser -Confirm:$false}
+
+
+#----------------------------------------------------------[Declarations]----------------------------------------------------------
+
+$tenantName = (Get-AzureADTenantDetail).Displayname
+$tenant = (Get-AzureADDomain | Where-Object{$_.isinitial -eq $true}).name
+$reportPath = "C:\temp\" + ((get-date -format d) -replace "/","-") + "_" + $tenant 
+
+#-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+#-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+# get all licensed users
+$all = Get-AzureADUser -All $true | Where-Object{$_.AssignedLicenses -ne $null}
+
+#Downloads https://download.microsoft.com/download/e/3/e/e3e9faf2-f28b-490a-9ada-c6089a1fc5b0/Product%20names%20and%20service%20plan%20identifiers%20for%20licensing.csv
+$csvDownload = Invoke-WebRequest -Uri https://download.microsoft.com/download/e/3/e/e3e9faf2-f28b-490a-9ada-c6089a1fc5b0/Product%20names%20and%20service%20plan%20identifiers%20for%20licensing.csv -ContentType csv
+$csv = ConvertFrom-Csv -InputObject $csvDownload
+
+[System.Collections.ArrayList]$report = @()
 
 foreach ($user in $all)
         {
+
+            [System.Collections.ArrayList]$licenseDetails = @()
+            [System.Collections.ArrayList]$disPlanDetails = @()
+
             $licenses = $user.AssignedLicenses.skuid
             [array]$disabledPlans = $user.AssignedLicenses.DisabledPlans -split " "
 
             foreach ($license in $licenses){
-                $licObj = Get-AzureADSubscribedSku | ?{$_.SKUid -eq $license}      
+                $licObj = Get-AzureADSubscribedSku | Where-Object{$_.SKUid -eq $license}      
                 $ind = $csv.'String_ Id'.IndexOf($licObj.skupartnumber)
                 $licName = $csv[$ind]
                 $licDispName = $licName.Product_Display_Name
-                $licenseDetails += $licDispName
+                $licenseDetails.Add($licDispName)
             }
 
             foreach ($disabledPlan in $disabledPlans){      
                 $ind = $csv.'Service_Plan_Id'.IndexOf($disabledPlan)
                 $disPlanObj = $csv[$ind]
                 $disPlanName = $disPlanObj.Service_Plans_Included_Friendly_Names
-                $disPlanDetails += $disPlanName
+                $disPlanDetails.Add($disPlanName)   
             }
 
-            [string]$disPlanDetails = $disPlanDetails -join ", " 
-            [string]$licenseDetails = $licenseDetails -join ", "
+            $disPlanDetails = $disPlanDetails | Sort-Object
+            $licenseDetails = $licenseDetails | Sort-Object
 
             $ReportLine = [PSCustomObject][Ordered]@{  
                    User            = $User.DisplayName
@@ -36,14 +59,16 @@ foreach ($user in $all)
                    Country         = $User.Country
                    Department      = $User.Department
                    Title           = $User.JobTitle
-                   Licenses        = $licenseDetails
-                   DisabledPlans = $disPlanDetails }
+                   Licenses        = $licenseDetails -join ";"
+                   DisabledPlans   = $disPlanDetails -join ";" }
             
-            $Report += ($ReportLine)
+            $report.Add($ReportLine)
   
         }
 
-            
+#reporting            
 $report | Out-GridView
+$report | ConvertTo-Html -Title "Microsoft 365 License Report"  -As Table | Out-File ($reportPath + ".htm")
+$report | Export-Excel -Path ($reportPath + ".xlsx") -Title ("Microsoft 365 License Report " + $tenantName) -Show
 
 #https://docs.microsoft.com/en-us/azure/active-directory/enterprise-users/licensing-ps-examples
