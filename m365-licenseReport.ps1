@@ -71,4 +71,6 @@ $report | Out-GridView
 $report | ConvertTo-Html -Title "Microsoft 365 License Report"  -As Table | Out-File ($reportPath + ".htm")
 $report | Export-Excel -Path ($reportPath + ".xlsx") -Title ("Microsoft 365 License Report " + $tenantName) -Show
 
+Write-Host "`n***********************************************************************`nReports exported to"$reportPath -ForegroundColor Green
+
 #https://docs.microsoft.com/en-us/azure/active-directory/enterprise-users/licensing-ps-examples
